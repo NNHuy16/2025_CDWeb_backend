@@ -9,4 +9,5 @@ import java.util.List;
 public interface JobRepository extends JpaRepository<Job, Long> {
     List<Job> findByEmployer(User employer);
     List<Job> findByStatus(String status);
+    List<Job> findByid(Long id);
 }

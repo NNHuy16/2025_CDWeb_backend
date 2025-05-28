@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthorizationCodeAuthenticationToken;
@@ -38,18 +39,6 @@ public class UsersService {
         this.passwordEncoder = passwordEncoder;
         this.authManager = authManager;
         this.tokenProvider = tokenProvider;
-    }
-
-    public User createUsers(User user) {
-        if (user.getRole() == null) {
-            user.setRole(Role.USER);
-        }
-        else if (user.getRole() == Role.EMPLOYER) {
-            user.setRole(Role.EMPLOYER);
-        }
-        else{user.setRole(Role.ADMIN);}
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        return userRepository.save(user);
     }
 
     public LoginResponse login(LoginRequest request) {
@@ -88,7 +77,13 @@ public class UsersService {
 
         Optional<User> optionalUser = userRepository.findByEmail(email);
         if (optionalUser.isPresent()) {
-            return optionalUser.get();
+            User existingUser = optionalUser.get();
+            if (existingUser.getProvider() != AuthProvider.GOOGLE) {
+                // Người dùng đã đăng ký local, không cho login Google
+                throw new IllegalArgumentException("Tài khoản đã tồn tại.");
+            }
+
+            return existingUser;
         }
 
         User user = new User();
@@ -101,28 +96,28 @@ public class UsersService {
         return userRepository.save(user);
     }
 
-    public User loginReisterUserFacebook(OAuth2AuthenticationToken auth) {
-        OAuth2User oAuth2User = auth.getPrincipal();
-        // Lấy thông tin user từ Facebook
-        String email = oAuth2User.getAttribute("email");
-        String name = oAuth2User.getAttribute("name");
-        String picture = oAuth2User.getAttribute("picture"); // Có thể khác tùy scope Facebook trả về
-
-        // Kiểm tra user đã tồn tại chưa
-        Optional<User> optionalUser = userRepository.findByEmail(email);
-        if (optionalUser.isPresent()) {
-            return optionalUser.get();
-        }
-
-        User user = new User();
-        user.setEmail(email);
-        user.setFullName(name);
-        user.setLogoUrl(picture);
-        user.setRole(Role.USER);
-        user.setProvider(AuthProvider.FACEBOOK);
-
-        return userRepository.save(user);
-    }
+//    public User loginReisterUserFacebook(OAuth2AuthenticationToken auth) {
+//        OAuth2User oAuth2User = auth.getPrincipal();
+//        // Lấy thông tin user từ Facebook
+//        String email = oAuth2User.getAttribute("email");
+//        String name = oAuth2User.getAttribute("name");
+//        String picture = oAuth2User.getAttribute("picture"); // Có thể khác tùy scope Facebook trả về
+//
+//        // Kiểm tra user đã tồn tại chưa
+//        Optional<User> optionalUser = userRepository.findByEmail(email);
+//        if (optionalUser.isPresent()) {
+//            return optionalUser.get();
+//        }
+//
+//        User user = new User();
+//        user.setEmail(email);
+//        user.setFullName(name);
+//        user.setLogoUrl(picture);
+//        user.setRole(Role.USER);
+//        user.setProvider(AuthProvider.FACEBOOK);
+//
+//        return userRepository.save(user);
+//    }
 
 
 
@@ -143,11 +138,16 @@ public class UsersService {
         return userRepository.findByRole(role);
     }
 
-    public User updateUser(User user) {
-        if (user.getPassword() != null) {
-            user.setPassword(passwordEncoder.encode(user.getPassword()));
-        }
-        return userRepository.save(user);
+    public User updateUserProfile(String email, User newUserData) {
+        User existingUser = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        existingUser.setFullName(newUserData.getFullName());
+        existingUser.setPhoneNumber(newUserData.getPhoneNumber());
+        existingUser.setDateOfBirth(newUserData.getDateOfBirth());
+        existingUser.setLogoUrl(newUserData.getLogoUrl());
+
+        return userRepository.save(existingUser);
     }
 
     public void deleteUser(Long id) {

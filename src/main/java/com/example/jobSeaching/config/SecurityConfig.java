@@ -58,8 +58,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/auth/login",
                                 "/api/auth/register",
                                 "/oauth2/**").permitAll()
-                        .requestMatchers("/api/users/employers/**").hasRole("EMPLOYER")
+                        .requestMatchers("/api/users/profile/**").permitAll()
                         .requestMatchers("/api/users/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/jobs/*/status").hasRole("ADMIN")
+                        .requestMatchers("/api/jobs/**").hasRole("EMPLOYER")
                         .requestMatchers("/api/users/user/**").hasRole("USER")
                         .requestMatchers("/api/applications/**").hasAnyRole("USER", "EMPLOYER")
                         .anyRequest().authenticated()

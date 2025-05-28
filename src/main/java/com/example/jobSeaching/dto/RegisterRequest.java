@@ -30,12 +30,13 @@ public class RegisterRequest {
     @Pattern(regexp = "^[0-9]{10,15}$", message = "Số điện thoại không hợp lệ")
     private String phoneNumber;
 
-    //    @Pattern(regexp = "^(http|https)://.*$", message = "Avatar phải là URL hợp lệ", flags = Pattern.Flag.CASE_INSENSITIVE)
-    private String logoUrl; // tương ứng logoUrl
 
     @NotNull(message = "Ngày sinh không được để trống")
     @Past(message = "Ngày sinh phải không hợp lệ")
     private LocalDate dateOfBirth;
+
+    //    @Pattern(regexp = "^(http|https)://.*$", message = "Avatar phải là URL hợp lệ", flags = Pattern.Flag.CASE_INSENSITIVE)
+    private String logoUrl; // tương ứng logoUrl
 
 }
 

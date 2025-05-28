@@ -34,8 +34,8 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         User user;
         if ("google".equals(registrationId)) {
             user = usersService.loginReisterUserGoogle(authToken);
-        } else if ("facebook".equals(registrationId)) {
-            user = usersService.loginReisterUserFacebook(authToken);
+//        } else if ("facebook".equals(registrationId)) {
+//            user = usersService.loginReisterUserFacebook(authToken);
         } else {
             throw new IllegalArgumentException("Unsupported OAuth2 provider: " + registrationId);
         }

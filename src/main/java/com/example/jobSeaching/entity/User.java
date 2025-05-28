@@ -2,9 +2,11 @@ package com.example.jobSeaching.entity;
 
 import com.example.jobSeaching.entity.enums.AuthProvider;
 import com.example.jobSeaching.entity.enums.Role;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @AllArgsConstructor
@@ -26,6 +28,9 @@ public class User {
 
     @Column(unique = true)
     private String phoneNumber;
+
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate dateOfBirth;
 
     private String logoUrl;
 

@@ -1,6 +1,8 @@
 package com.example.jobSeaching.service;
 
+import com.example.jobSeaching.entity.Job;
 import com.example.jobSeaching.entity.User;
+import com.example.jobSeaching.entity.enums.JobStatus;
 import com.example.jobSeaching.entity.enums.Role;
 import com.example.jobSeaching.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +25,15 @@ public class AdminService {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
     }
+
+    public User createUsers(User user) {
+        if (user.getRole() == null ) {
+            user.setRole(Role.USER);
+        }
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        return userRepository.save(user);
+    }
+
 
     public Optional<User> getAdminById(Long id) {
         return userRepository.findById(id)
