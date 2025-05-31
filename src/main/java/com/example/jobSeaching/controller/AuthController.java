@@ -1,8 +1,8 @@
 package com.example.jobSeaching.controller;
 
-import com.example.jobSeaching.dto.LoginRequest;
-import com.example.jobSeaching.dto.LoginResponse;
-import com.example.jobSeaching.dto.RegisterRequest;
+import com.example.jobSeaching.dto.*;
+import com.example.jobSeaching.dto.OTP.ConfirmChangeEmailDTO;
+import com.example.jobSeaching.dto.OTP.RequestChangeEmailDTO;
 import com.example.jobSeaching.entity.enums.Role;
 import com.example.jobSeaching.entity.User;
 import com.example.jobSeaching.security.JwtTokenProvider;
@@ -17,6 +17,8 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 

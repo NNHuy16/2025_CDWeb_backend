@@ -28,9 +28,15 @@ public class JobController {
 
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Job> updateJobStatus(@PathVariable Long id, @RequestParam String status) {
-        return ResponseEntity.ok(jobService.updateJobStatus(id, status));
+    public ResponseEntity<Job> updateJobStatus(
+            @PathVariable Long id,
+            @RequestParam JobStatus status,
+            Authentication authentication) {
+
+        String adminEmail = authentication.getName();
+        return ResponseEntity.ok(jobService.updateJobStatus(id, status, adminEmail));
     }
+
 
 //    @GetMapping("/{id}")
 //    public ResponseEntity<Job> getJobById(@PathVariable Long id) {

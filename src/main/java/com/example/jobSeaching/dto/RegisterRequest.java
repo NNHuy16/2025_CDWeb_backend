@@ -35,7 +35,7 @@ public class RegisterRequest {
     @Past(message = "Ngày sinh phải không hợp lệ")
     private LocalDate dateOfBirth;
 
-    //    @Pattern(regexp = "^(http|https)://.*$", message = "Avatar phải là URL hợp lệ", flags = Pattern.Flag.CASE_INSENSITIVE)
+    @Pattern(regexp = "^(http|https)://.*$", message = "Avatar phải là URL hợp lệ", flags = Pattern.Flag.CASE_INSENSITIVE)
     private String logoUrl; // tương ứng logoUrl
 
 }

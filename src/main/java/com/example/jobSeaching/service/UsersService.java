@@ -3,11 +3,14 @@ package com.example.jobSeaching.service;
 import com.example.jobSeaching.dto.LoginRequest;
 import com.example.jobSeaching.dto.LoginResponse;
 import com.example.jobSeaching.dto.RegisterRequest;
+import com.example.jobSeaching.entity.EmailChangeRequest;
 import com.example.jobSeaching.entity.enums.AuthProvider;
 import com.example.jobSeaching.entity.enums.Role;
 import com.example.jobSeaching.entity.User;
+import com.example.jobSeaching.repository.EmailChangeRequestRepository;
 import com.example.jobSeaching.repository.UserRepository;
 import com.example.jobSeaching.security.JwtTokenProvider;
+import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -21,10 +24,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindingResult;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 import java.util.stream.Collectors;
 
+@AllArgsConstructor
 @Service
 @Transactional
 public class UsersService {
@@ -33,13 +39,9 @@ public class UsersService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authManager;
     private final JwtTokenProvider tokenProvider;
+    private final EmailChangeRequestRepository emailChangeRequestRepository;
+    private final MailService mailService;
 
-    public UsersService(UserRepository userRepository, PasswordEncoder passwordEncoder, AuthenticationManager authManager, JwtTokenProvider tokenProvider) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.authManager = authManager;
-        this.tokenProvider = tokenProvider;
-    }
 
     public LoginResponse login(LoginRequest request) {
         Authentication auth = authManager.authenticate(
@@ -62,6 +64,7 @@ public class UsersService {
         user.setEmail(registerRequest.getEmail());
         user.setPhoneNumber(registerRequest.getPhoneNumber());
         user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
+        user.setDateOfBirth(registerRequest.getDateOfBirth());
         user.setLogoUrl(registerRequest.getLogoUrl());
         user.setProvider(AuthProvider.LOCAL);
         user.setRole(Role.USER);
@@ -161,6 +164,65 @@ public class UsersService {
     public boolean existsByPhoneNumber(String phoneNumber) {
         return userRepository.existsByPhoneNumber(phoneNumber);
     }
+
+
+    public void changePassword(String email, String oldPassword, String newPassword) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            throw new IllegalArgumentException("Mật khẩu cũ không đúng");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
+
+    public void requestChangeEmail(String currentEmail, String newEmail) {
+        if (existsByEmail(newEmail)) {
+            throw new IllegalArgumentException("Email mới đã được sử dụng");
+        }
+
+        String otp = String.valueOf(new Random().nextInt(899999) + 100000);
+        LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(5);
+
+        emailChangeRequestRepository.deleteByCurrentEmail(currentEmail);
+
+        EmailChangeRequest request = new EmailChangeRequest();
+        request.setCurrentEmail(currentEmail);
+        request.setNewEmail(newEmail);
+        request.setOtp(otp);
+        request.setExpiresAt(expiresAt);
+
+        emailChangeRequestRepository.save(request);
+        mailService.sendOtpEmail(newEmail, otp);
+    }
+
+
+    public void confirmChangeEmail(String currentEmail, String otp) {
+        EmailChangeRequest request = emailChangeRequestRepository.findByCurrentEmail(currentEmail)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy yêu cầu đổi email"));
+
+        if (!request.getOtp().equals(otp)) {
+            throw new IllegalArgumentException("OTP không hợp lệ");
+        }
+
+        if (request.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("OTP đã hết hạn");
+        }
+
+        User user = userRepository.findByEmail(currentEmail)
+                .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy người dùng"));
+
+        user.setEmail(request.getNewEmail());
+        userRepository.save(user);
+
+        emailChangeRequestRepository.deleteByCurrentEmail(currentEmail);
+    }
+
+
+
+
 
 }
 
