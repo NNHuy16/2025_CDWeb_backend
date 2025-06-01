@@ -2,6 +2,9 @@ package com.example.jobSeaching.config;
 
 import com.example.jobSeaching.security.CustomUserDetailsService;
 import com.example.jobSeaching.security.JwtAuthenticationFilter;
+import com.example.jobSeaching.security.JwtTokenProvider;
+import com.example.jobSeaching.security.OAuth2SuccessHandler;
+import com.example.jobSeaching.service.UsersService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -12,7 +15,6 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -24,7 +26,6 @@ public class SecurityConfig {
     private final CustomUserDetailsService customUserDetailsService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-
     public SecurityConfig(CustomUserDetailsService customUserDetailsService,
                           JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.customUserDetailsService = customUserDetailsService;
@@ -33,10 +34,9 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return NoOpPasswordEncoder.getInstance();
+        return new BCryptPasswordEncoder();
     }
 
-    // Khai báo provider để Spring Security biết dùng customUserDetailsService và password encoder
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
@@ -51,19 +51,30 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, OAuth2SuccessHandler oAuth2SuccessHandler) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/users", "/api/users/admin").permitAll()
-                        .requestMatchers("/api/employers/**").hasRole("EMPLOYER")
-                        .requestMatchers("/api/admins/**").hasRole("ADMIN")
-                        .requestMatchers("/api/users/**").hasRole("USER")
+                        .requestMatchers(HttpMethod.POST, "/api/auth/login",
+                                "/api/auth/register",
+                                "/oauth2/**",
+                                "/api/auth/request-change-email",
+                                "/api/auth/confirm-change-email").permitAll()
+                        .requestMatchers(HttpMethod.PATCH, "/api/auth/change-password").permitAll()
+                        .requestMatchers("/api/users/profile/**").permitAll()
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/jobs/*/status").hasRole("ADMIN")
+                        .requestMatchers("/api/jobs/**").hasRole("EMPLOYER")
+                        .requestMatchers("/api/users/user/**").hasRole("USER")
                         .requestMatchers("/api/applications/**").hasAnyRole("USER", "EMPLOYER")
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .oauth2Login(oauth2 -> oauth2
+                        .loginPage("/oauth2/authorization/google")
+                        .successHandler(oAuth2SuccessHandler)
+                )
                 .httpBasic(Customizer.withDefaults());
 
         return http.build();

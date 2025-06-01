@@ -1,7 +1,7 @@
 package com.example.jobSeaching.service;
 
 import com.example.jobSeaching.entity.User;
-import com.example.jobSeaching.entity.Role;
+import com.example.jobSeaching.entity.enums.Role;
 import com.example.jobSeaching.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,11 +17,6 @@ public class EmployerService {
 
     public EmployerService(UserRepository userRepository) {
         this.userRepository = userRepository;
-    }
-
-    public User createEmployer(User user) {
-        user.setRole(Role.EMPLOYER);
-        return userRepository.save(user);
     }
 
     public Optional<User> getEmployerById(Long id) {

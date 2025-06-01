@@ -11,13 +11,13 @@ import java.util.Date;
 @Component
 public class JwtTokenProvider {
 
-    // ✅ Tạo secret key an toàn cho HS512
+    //  Tạo secret key an toàn cho HS512
     private final SecretKey secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS512);
 
     // Token sống 1 ngày (hoặc thay đổi giá trị tuỳ bạn)
     private final long jwtExpirationMs = 86400000;
 
-    // ✅ Tạo token JWT
+    //  Tạo token JWT
     public String generateToken(Authentication authentication) {
         String username = authentication.getName();
         Date now = new Date();
@@ -31,7 +31,7 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    // ✅ Lấy username từ token
+    //  Lấy username từ token
     public String getUsernameFromJWT(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(secretKey)
@@ -41,7 +41,7 @@ public class JwtTokenProvider {
                 .getSubject();
     }
 
-    // ✅ Kiểm tra token hợp lệ
+    //  Kiểm tra token hợp lệ
     public boolean validateToken(String authToken) {
         try {
             Jwts.parserBuilder()

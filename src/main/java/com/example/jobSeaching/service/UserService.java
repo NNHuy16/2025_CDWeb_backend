@@ -1,6 +1,5 @@
 package com.example.jobSeaching.service;
 
-import com.example.jobSeaching.entity.Role;
 import com.example.jobSeaching.entity.User;
 import com.example.jobSeaching.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;

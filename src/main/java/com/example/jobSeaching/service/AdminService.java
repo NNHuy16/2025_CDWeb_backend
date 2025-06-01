@@ -1,15 +1,24 @@
 package com.example.jobSeaching.service;
 
+import com.example.jobSeaching.entity.ActivationKey;
+import com.example.jobSeaching.entity.Job;
 import com.example.jobSeaching.entity.User;
-import com.example.jobSeaching.entity.Role;
+import com.example.jobSeaching.entity.enums.JobStatus;
+import com.example.jobSeaching.entity.enums.Role;
+import com.example.jobSeaching.repository.ActivationKeyRepository;
+import com.example.jobSeaching.repository.JobRepository;
 import com.example.jobSeaching.repository.UserRepository;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+
 
 @Service
 @Transactional
@@ -24,11 +33,14 @@ public class AdminService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public User createAdmin(User user) {
+    public User createUsers(User user) {
+        if (user.getRole() == null) {
+            user.setRole(Role.USER);
+        }
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        user.setRole(Role.ADMIN);
         return userRepository.save(user);
     }
+
 
     public Optional<User> getAdminById(Long id) {
         return userRepository.findById(id)
@@ -55,4 +67,5 @@ public class AdminService {
     public void deleteAdmin(Long id) {
         userRepository.deleteById(id);
     }
+
 }

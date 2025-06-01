@@ -1,4 +1,4 @@
-package com.example.jobSeaching.entity;
+package com.example.jobSeaching.entity.enums;
 
 public enum Role {
     USER,
