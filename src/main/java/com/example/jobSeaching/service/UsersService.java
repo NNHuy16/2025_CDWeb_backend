@@ -3,32 +3,31 @@ package com.example.jobSeaching.service;
 import com.example.jobSeaching.dto.LoginRequest;
 import com.example.jobSeaching.dto.LoginResponse;
 import com.example.jobSeaching.dto.RegisterRequest;
+import com.example.jobSeaching.entity.ActivationKey;
 import com.example.jobSeaching.entity.EmailChangeRequest;
 import com.example.jobSeaching.entity.enums.AuthProvider;
 import com.example.jobSeaching.entity.enums.Role;
 import com.example.jobSeaching.entity.User;
+import com.example.jobSeaching.entity.enums.ServiceTier;
+import com.example.jobSeaching.repository.ActivationKeyRepository;
 import com.example.jobSeaching.repository.EmailChangeRequestRepository;
 import com.example.jobSeaching.repository.UserRepository;
 import com.example.jobSeaching.security.JwtTokenProvider;
 import lombok.AllArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthorizationCodeAuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.validation.BindingResult;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
-import java.util.stream.Collectors;
 
 @AllArgsConstructor
 @Service
@@ -41,6 +40,7 @@ public class UsersService {
     private final JwtTokenProvider tokenProvider;
     private final EmailChangeRequestRepository emailChangeRequestRepository;
     private final MailService mailService;
+    private final  ActivationKeyRepository activationKeyRepository;
 
 
     public LoginResponse login(LoginRequest request) {
@@ -68,8 +68,32 @@ public class UsersService {
         user.setLogoUrl(registerRequest.getLogoUrl());
         user.setProvider(AuthProvider.LOCAL);
         user.setRole(Role.USER);
-        return userRepository.save(user);
+
+// Gọi lần 1 để có ID
+        userRepository.save(user);
+
+// Set keyId
+        user.setKeyId("NHK" + user.getId());
+
+// Gọi lần 2 để cập nhật keyId và lấy kết quả sau khi lưu
+        User savedUser = userRepository.save(user);
+
+// Tạo ActivationKey liên quan
+        ActivationKey activationKey = new ActivationKey();
+        activationKey.setUser(savedUser);
+        activationKey.setFullName(savedUser.getFullName());
+        activationKey.setActivationKey(savedUser.getKeyId());
+        activationKey.setServiceTier(ServiceTier.BASIC);
+        activationKey.setActivated(false);
+        activationKey.setCreatedAt(LocalDateTime.now());
+
+// Lưu activationKey
+        activationKeyRepository.save(activationKey);
+
+        return savedUser;
+
     }
+
 
 
     public User loginReisterUserGoogle(OAuth2AuthenticationToken auth) {

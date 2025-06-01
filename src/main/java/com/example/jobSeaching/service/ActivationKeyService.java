@@ -24,7 +24,7 @@ public class ActivationKeyService {
 
 
     public void activateKey(String key) {
-        ActivationKey activationKey = activationKeyRepository.findByActivationKey(key)
+        ActivationKey activationKey = activationKeyRepository.findByActivationKeyIgnoreCase(key)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy key"));
 
         if (activationKey.isActivated()) {
@@ -43,4 +43,19 @@ public class ActivationKeyService {
         activationKeyRepository.save(activationKey);
     }
 
+    public void deactivateKey(String key) {
+        ActivationKey activationKey = activationKeyRepository.findByActivationKeyIgnoreCase(key)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy key"));
+
+        if (!activationKey.isActivated()) {
+            throw new RuntimeException("Key chưa được kích hoạt");
+        }
+
+        activationKey.setActivated(false);
+        activationKeyRepository.save(activationKey);
+
+        User user = activationKey.getUser();
+        user.setRole(Role.USER);
+        userRepository.save(user);
+    }
 }

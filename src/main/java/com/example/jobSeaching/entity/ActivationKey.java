@@ -29,7 +29,7 @@ public class ActivationKey {
 
     private boolean activated = false;
 
-    @Column(name = "key", unique = true, nullable = false)
+    @Column(name = "activation_key", unique = true, nullable = false)
     private String activationKey;
 
     @Column(nullable = false)

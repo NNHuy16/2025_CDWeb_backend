@@ -1,5 +1,6 @@
 package com.example.jobSeaching.controller;
 
+import com.example.jobSeaching.dto.ActivationRequest;
 import com.example.jobSeaching.entity.ActivationKey;
 import com.example.jobSeaching.entity.User;
 import com.example.jobSeaching.entity.enums.Role;
@@ -63,27 +64,30 @@ public class AdminController {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/activation-keys")
-    @PreAuthorize("hasRole('ADMIN')")
-    public List<ActivationKey> getAllKeys() {
-        return activationKeyRepository.findAll();
-    }
+    @RestController
+    @RequestMapping("/api/admin")
+    public class ActivationKeyAdminController {
 
-    @DeleteMapping("/activation-keys/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> deleteKey(@PathVariable Long id) {
-        if (!activationKeyRepository.existsById(id)) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Key không tồn tại");
+        private final ActivationKeyService activationKeyService;
+
+        public ActivationKeyAdminController(ActivationKeyService activationKeyService) {
+            this.activationKeyService = activationKeyService;
         }
-        activationKeyRepository.deleteById(id);
-        return ResponseEntity.ok("Đã xóa key");
-    }
 
-    @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping("/activation-keys/activate/{key}")
-    public ResponseEntity<?> activateKey(@PathVariable String key) {
-        activationKeyService.activateKey(key);
-        return ResponseEntity.ok("Key đã được kích hoạt");
-    }
+        @PostMapping("/activation")
+        public ResponseEntity<String> changeActivationStatus(@RequestBody ActivationRequest request) {
+            System.out.println("Received: " + request);
+            try {
+                if (request.isActivated()) {
+                    activationKeyService.activateKey(request.getKey());
+                } else {
+                    activationKeyService.deactivateKey(request.getKey());
+                }
+                return ResponseEntity.ok("Cập nhật trạng thái kích hoạt thành công");
+            } catch (RuntimeException ex) {
+                return ResponseEntity.badRequest().body(ex.getMessage());
+            }
+        }
 
+    }
 }

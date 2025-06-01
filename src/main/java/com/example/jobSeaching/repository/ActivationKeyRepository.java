@@ -6,5 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 
 public interface ActivationKeyRepository extends JpaRepository<ActivationKey, Long> {
-    Optional<ActivationKey> findByActivationKey(String activationKey);
+    Optional<ActivationKey> findByActivationKeyIgnoreCase(String activationKey);
 }
