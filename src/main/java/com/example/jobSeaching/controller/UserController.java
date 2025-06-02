@@ -13,29 +13,25 @@ import com.example.jobSeaching.service.UsersService;
 import com.example.jobSeaching.service.AdminService;
 import com.example.jobSeaching.service.JobService;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
+
+    @Autowired
     private final UsersService userService;
-    private final AdminService adminService;
-    private final JobService jobService;
 
 
-
-    public UserController(UsersService userService, AdminService adminService, EmployerService employerService, JobService jobService) {
+    public UserController(UsersService userService) {
         this.userService = userService;
-        this.adminService = adminService;
-        this.jobService = jobService;
+
     }
 
     // Cập nhật user (có thể cập nhật role khi admin thực hiện)

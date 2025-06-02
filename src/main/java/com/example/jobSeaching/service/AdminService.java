@@ -1,71 +1,21 @@
 package com.example.jobSeaching.service;
 
-import com.example.jobSeaching.entity.ActivationKey;
-import com.example.jobSeaching.entity.Job;
 import com.example.jobSeaching.entity.User;
-import com.example.jobSeaching.entity.enums.JobStatus;
-import com.example.jobSeaching.entity.enums.Role;
-import com.example.jobSeaching.repository.ActivationKeyRepository;
-import com.example.jobSeaching.repository.JobRepository;
-import com.example.jobSeaching.repository.UserRepository;
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+public interface AdminService {
+    User createUsers(User user);
 
-@Service
-@Transactional
-public class AdminService {
+    Optional<User> getAdminById(Long id);
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
+    Optional<User> getAdminByEmail(String email);
 
-    @Autowired
-    public AdminService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
+    List<User> getAllAdmins();
 
-    public User createUsers(User user) {
-        if (user.getRole() == null) {
-            user.setRole(Role.USER);
-        }
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        return userRepository.save(user);
-    }
+    User updateAdmin(User user);
 
-
-    public Optional<User> getAdminById(Long id) {
-        return userRepository.findById(id)
-                .filter(user -> user.getRole() == Role.ADMIN);
-    }
-
-    public Optional<User> getAdminByEmail(String email) {
-        return userRepository.findByEmail(email)
-                .filter(user -> user.getRole() == Role.ADMIN);
-    }
-
-    public List<User> getAllAdmins() {
-        return userRepository.findByRole(Role.ADMIN);
-    }
-
-    public User updateAdmin(User user) {
-        if (user.getPassword() != null) {
-            user.setPassword(passwordEncoder.encode(user.getPassword()));
-        }
-        user.setRole(Role.ADMIN); // đảm bảo không đổi vai trò khác
-        return userRepository.save(user);
-    }
-
-    public void deleteAdmin(Long id) {
-        userRepository.deleteById(id);
-    }
+    void deleteAdmin(Long id);
 
 }

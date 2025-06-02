@@ -1,6 +1,7 @@
 package com.example.jobSeaching.entity;
 
 import com.example.jobSeaching.entity.enums.AuthProvider;
+import com.example.jobSeaching.entity.enums.MembershipType;
 import com.example.jobSeaching.entity.enums.Role;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
@@ -37,11 +38,16 @@ public class User {
 
     private String logoUrl;
 
-    @Enumerated(EnumType.STRING)
-    private AuthProvider provider;
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "membership_id")
+    private Membership membership;
 
     @Enumerated(EnumType.STRING)
     private Role role;
+
+    @Enumerated(EnumType.STRING)
+    private AuthProvider provider;
+
 
     @OneToMany(mappedBy = "user")
     private List<Application> applications;

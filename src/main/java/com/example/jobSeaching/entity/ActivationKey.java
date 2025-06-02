@@ -1,6 +1,6 @@
 package com.example.jobSeaching.entity;
 
-import com.example.jobSeaching.entity.enums.ServiceTier;
+import com.example.jobSeaching.entity.enums.MembershipType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -24,16 +24,15 @@ public class ActivationKey {
     private String fullName;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private ServiceTier serviceTier;
+    private MembershipType membershipType;
 
     private boolean activated = false;
 
     @Column(name = "activation_key", unique = true, nullable = false)
     private String activationKey;
 
-    @Column(nullable = false)
-    private LocalDateTime createdAt;
+    @Column(name = "created_at", nullable = true)
+    private LocalDateTime activatedAt;
 
     private LocalDateTime expiredAt;
 

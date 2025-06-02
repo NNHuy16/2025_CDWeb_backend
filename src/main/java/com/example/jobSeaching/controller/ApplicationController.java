@@ -2,6 +2,7 @@ package com.example.jobSeaching.controller;
 
 import com.example.jobSeaching.entity.Application;
 import com.example.jobSeaching.service.ApplicationService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -10,6 +11,8 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/applications")
 public class ApplicationController {
+
+    @Autowired
     private final ApplicationService applicationService;
 
     public ApplicationController(ApplicationService applicationService) {
