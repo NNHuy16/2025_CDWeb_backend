@@ -6,11 +6,13 @@ import com.example.jobSeaching.dto.OTP.RequestChangeEmailDTO;
 import com.example.jobSeaching.entity.enums.Role;
 import com.example.jobSeaching.entity.User;
 import com.example.jobSeaching.security.JwtTokenProvider;
+import com.example.jobSeaching.service.BlacklistService;
 import com.example.jobSeaching.service.UsersService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -29,9 +31,14 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/auth")
+@CrossOrigin(origins = "*")
 public class AuthController {
 
+    @Autowired
     private final UsersService userService;
+
+    @Autowired
+    private BlacklistService blacklistService;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
@@ -65,6 +72,13 @@ public class AuthController {
     @GetMapping("/login/google")
     public void loginWithGoogle(HttpServletResponse response) throws IOException {
         response.sendRedirect("/oauth2/authorization/google");
+    }
+
+    @PostMapping("/api/logout")
+    public ResponseEntity<?> logout(@RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.substring(7); // bỏ "Bearer "
+        blacklistService.addToken(token);  // lưu token vào blacklist
+        return ResponseEntity.ok("Logged out");
     }
 
 }

@@ -8,6 +8,7 @@ import com.example.jobSeaching.repository.ActivationKeyRepository;
 import com.example.jobSeaching.service.AdminService;
 import com.example.jobSeaching.service.ActivationKeyService;
 import com.example.jobSeaching.service.UsersService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -20,16 +21,16 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/admin")
 public class AdminController {
 
+    @Autowired
     private final UsersService userService;
-    private final AdminService adminService;
-    private final ActivationKeyService activationKeyService;
-    private final ActivationKeyRepository activationKeyRepository;
 
-    public AdminController(UsersService userService, AdminService adminService, ActivationKeyService activationKeyService, ActivationKeyRepository activationKeyRepository) {
+    @Autowired
+    private final AdminService adminService;
+
+    public AdminController(UsersService userService, AdminService adminService) {
         this.userService = userService;
         this.adminService = adminService;
-        this.activationKeyService = activationKeyService;
-        this.activationKeyRepository = activationKeyRepository;
+
     }
 
     @PostMapping
@@ -79,7 +80,7 @@ public class AdminController {
             System.out.println("Received: " + request);
             try {
                 if (request.isActivated()) {
-                    activationKeyService.activateKey(request.getKey());
+                    activationKeyService.activateKey(request);
                 } else {
                     activationKeyService.deactivateKey(request.getKey());
                 }

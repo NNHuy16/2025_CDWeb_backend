@@ -44,7 +44,6 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
                 List.of(() -> "ROLE_" + user.getRole().name()));
         String jwt = jwtTokenProvider.generateToken(springAuth);
 
-        response.setContentType("application/json");
-        response.getWriter().write("{\"token\":\"" + jwt + "\"}");
+        response.sendRedirect("http://localhost:5173/oauth2/success?token=" + jwt);
     }
 }

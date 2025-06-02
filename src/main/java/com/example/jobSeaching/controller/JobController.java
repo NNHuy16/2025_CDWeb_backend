@@ -5,6 +5,7 @@ import com.example.jobSeaching.entity.Job;
 import com.example.jobSeaching.entity.enums.JobStatus;
 import com.example.jobSeaching.service.JobService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -17,6 +18,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class JobController {
 
+    @Autowired
     private final JobService jobService;
 
 
