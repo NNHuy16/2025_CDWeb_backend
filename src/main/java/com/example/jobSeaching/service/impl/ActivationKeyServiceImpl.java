@@ -11,6 +11,8 @@ import com.example.jobSeaching.repository.MembershipRepository;
 import com.example.jobSeaching.repository.UserRepository;
 import com.example.jobSeaching.service.ActivationKeyService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -25,6 +27,18 @@ public class ActivationKeyServiceImpl implements ActivationKeyService {
     private final MembershipRepository membershipRepository;
 
     public void activateKey(ActivationRequest request) {
+        // Lấy user hiện tại từ SecurityContext
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentEmail = authentication.getName(); // Vì bạn login bằng email
+
+        // Tìm user theo email
+        User currentUser = userRepository.findByEmail(currentEmail)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+
+        // Chỉ cho phép ADMIN gọi API này
+        if (!currentUser.getRole().equals(Role.ADMIN)) {
+            throw new RuntimeException("Bạn không có quyền thực hiện hành động này");
+        }
         ActivationKey activationKey = activationKeyRepository.findByActivationKeyIgnoreCase(request.getKey())
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy key"));
 

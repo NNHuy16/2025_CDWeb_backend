@@ -8,6 +8,7 @@ import com.example.jobSeaching.entity.enums.MembershipType;
 import com.example.jobSeaching.repository.AdminNotificationRepository;
 import com.example.jobSeaching.repository.MembershipRepository;
 import com.example.jobSeaching.repository.UserRepository;
+import com.example.jobSeaching.service.NotificationSender;
 import com.example.jobSeaching.service.UpgradeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -29,6 +30,9 @@ public class UpgradeServiceImpl implements UpgradeService {
     @Autowired
     private AdminNotificationRepository notificationRepository;
 
+    @Autowired
+    private NotificationSender notificationSender;
+
     @Override
     public void upgradeMembership(UpgradeRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -43,13 +47,14 @@ public class UpgradeServiceImpl implements UpgradeService {
 
     @Override
     public void notifyAdminUserBoughtMembership(User user, MembershipType membershipType) {
-        String message = "Người dùng " + user.getFullName() + " đã mua gói " + membershipType.name()
-                + " - chờ kích hoạt.";
+        String message = "Người dùng " + user.getFullName() + " đã mua gói " + membershipType.name() + " - chờ kích hoạt.";
         AdminNotification notification = new AdminNotification();
         notification.setMessage(message);
         notification.setCreatedAt(LocalDateTime.now());
-
         notificationRepository.save(notification);
+
+        notificationSender.sendToAdmin(message); // gửi realtime
     }
+
 }
 

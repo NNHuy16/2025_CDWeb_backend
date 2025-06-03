@@ -1,19 +1,14 @@
 package com.example.jobSeaching.service.impl;
 
-import com.example.jobSeaching.entity.AdminNotification;
 import com.example.jobSeaching.entity.User;
-import com.example.jobSeaching.entity.enums.MembershipType;
 import com.example.jobSeaching.entity.enums.Role;
-import com.example.jobSeaching.repository.AdminNotificationRepository;
 import com.example.jobSeaching.repository.UserRepository;
 import com.example.jobSeaching.service.AdminService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 

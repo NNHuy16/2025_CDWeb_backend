@@ -12,17 +12,18 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin/notifications")
-@PreAuthorize("hasRole('ADMIN')")
 public class NotificationController {
 
     @Autowired
     private AdminNotificationRepository notificationRepository;
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public List<AdminNotification> getAllNotifications() {
         return notificationRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/mark-read/{id}")
     public ResponseEntity<?> markAsRead(@PathVariable Long id) {
         AdminNotification noti = notificationRepository.findById(id)

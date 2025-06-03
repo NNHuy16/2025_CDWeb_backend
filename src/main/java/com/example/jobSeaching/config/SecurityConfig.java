@@ -1,7 +1,7 @@
 package com.example.jobSeaching.config;
 
 import com.example.jobSeaching.security.CustomUserDetailsService;
-import com.example.jobSeaching.security.JwtAuthenticationFilter;
+import com.example.jobSeaching.security.filter.JwtAuthenticationFilter;
 import com.example.jobSeaching.security.OAuth2SuccessHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -67,11 +67,11 @@ public class SecurityConfig {
                                 "/api/auth/confirm-change-email").permitAll()
                         .requestMatchers(HttpMethod.PATCH, "/api/auth/change-password").permitAll()
                         .requestMatchers("/api/users/profile/**").permitAll()
-                        .requestMatchers("/api/admin/**").permitAll()
+                        .requestMatchers("/api/admin/**").permitAll()//ĐANG TEST NÊN BẬT
                         .requestMatchers(HttpMethod.PATCH, "/api/jobs/*/status").hasRole("ADMIN")
                         .requestMatchers("/api/jobs/**").hasRole("EMPLOYER")
                         .requestMatchers("/api/users/user/**").hasRole("USER")
-                        .requestMatchers("/api/payment/**").hasRole("USER")
+                        .requestMatchers("/api/vnpay/**").permitAll()
                         .requestMatchers("/api/applications/**").hasAnyRole("USER", "EMPLOYER")
                         .anyRequest().authenticated()
                 )
@@ -89,13 +89,15 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowCredentials(true);
-        config.setAllowedOriginPatterns(List.of("*"));
-        config.setAllowedHeaders(List.of("http://localhost:5173"));
+        // Đây là chỗ cần sửa
+        config.setAllowedOrigins(List.of("http://localhost:5173")); // gốc của React app
+        // Những method HTTP bạn cho phép
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        // Cho phép tất cả headers từ client
+        config.setAllowedHeaders(List.of("*"));
+        // Nếu bạn muốn client thấy Authorization trong response
         config.setExposedHeaders(List.of("Authorization"));
         config.setMaxAge(3600L);
-
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
