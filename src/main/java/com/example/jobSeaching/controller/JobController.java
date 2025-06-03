@@ -14,14 +14,16 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/jobs")
 @RequiredArgsConstructor
+
+@RequestMapping("/api/jobs")
 public class JobController {
 
     @Autowired
     private final JobService jobService;
 
 
+    @PreAuthorize("hasRole('EMPLOYER')")
     @PostMapping
     public ResponseEntity<Job> postJob(@RequestBody JobRequest jobRequest, Authentication authentication) {
         Job job = jobService.createJob(jobRequest, authentication);

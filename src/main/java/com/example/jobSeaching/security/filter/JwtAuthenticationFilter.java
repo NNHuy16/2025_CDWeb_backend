@@ -1,5 +1,6 @@
-package com.example.jobSeaching.security;
+package com.example.jobSeaching.security.filter;
 
+import com.example.jobSeaching.security.JwtTokenProvider;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

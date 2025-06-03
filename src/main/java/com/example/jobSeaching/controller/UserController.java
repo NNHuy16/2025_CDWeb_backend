@@ -15,6 +15,7 @@ import com.example.jobSeaching.service.JobService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -34,7 +35,7 @@ public class UserController {
 
     }
 
-    // Cập nhật user (có thể cập nhật role khi admin thực hiện)
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/profile")
     public ResponseEntity<?> updateProfile(@RequestBody User updatedUser, Authentication authentication) {
         String email = SecurityUtil.extractEmail(authentication);
@@ -42,7 +43,7 @@ public class UserController {
         return ResponseEntity.ok(updated);
     }
 
-
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/change-password")
     public ResponseEntity<String> changePassword(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -52,6 +53,7 @@ public class UserController {
         return ResponseEntity.ok("Đổi mật khẩu thành công");
     }
 
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/request-change-email")
     public ResponseEntity<String> requestChangeEmail(@AuthenticationPrincipal UserDetails userDetails,
                                                      @RequestBody RequestChangeEmailDTO dto) {
@@ -59,6 +61,7 @@ public class UserController {
         return ResponseEntity.ok("Đã gửi OTP tới email mới.");
     }
 
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/confirm-change-email")
     public ResponseEntity<String> confirmChangeEmail(@AuthenticationPrincipal UserDetails userDetails,
                                                      @RequestBody ConfirmChangeEmailDTO dto) {

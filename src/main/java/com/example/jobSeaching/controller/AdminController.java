@@ -27,18 +27,25 @@ public class AdminController {
     @Autowired
     private final AdminService adminService;
 
-    public AdminController(UsersService userService, AdminService adminService) {
+    @Autowired
+    private final ActivationKeyService activationKeyService;
+
+    public AdminController(UsersService userService, AdminService adminService, ActivationKeyService activationKeyService) {
         this.userService = userService;
         this.adminService = adminService;
 
+        this.activationKeyService = activationKeyService;
     }
 
+
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<User> createUser(@RequestBody User user) {
         return ResponseEntity.ok(adminService.createUsers(user));
     }
 
     // Lấy user theo id
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<User> getUserById(@PathVariable Long id) {
         return userService.getUserById(id)
@@ -47,6 +54,7 @@ public class AdminController {
     }
 
     // Lấy tất cả user, hoặc lọc theo role nếu truyền tham số role
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public ResponseEntity<List<User>> getUsers(@RequestParam(required = false) Role role) {
         List<User> users = userService.getAllUsers();
@@ -59,24 +67,16 @@ public class AdminController {
     }
 
     // Xóa user theo id
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
     }
 
-    @RestController
-    @RequestMapping("/api/admin")
-    public class ActivationKeyAdminController {
-
-        private final ActivationKeyService activationKeyService;
-
-        public ActivationKeyAdminController(ActivationKeyService activationKeyService) {
-            this.activationKeyService = activationKeyService;
-        }
-
-        @PostMapping("/activation")
-        public ResponseEntity<String> changeActivationStatus(@RequestBody ActivationRequest request) {
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/activation")
+    public ResponseEntity<String> changeActivationStatus(@RequestBody ActivationRequest request) {
             System.out.println("Received: " + request);
             try {
                 if (request.isActivated()) {
@@ -90,5 +90,4 @@ public class AdminController {
             }
         }
 
-    }
 }
