@@ -48,10 +48,24 @@ public class User {
     @Enumerated(EnumType.STRING)
     private AuthProvider provider;
 
+    @Column(nullable = false)
+    private boolean enabled = false;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private ActivationKey activationKey;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private VerificationToken verificationToken;
 
     @OneToMany(mappedBy = "user")
     private List<Application> applications;
 
+    @PostPersist
+    public void setKeyIdAfterInsert() {
+        if (this.keyId == null) {
+            this.keyId = "NHK" + this.id;
+        }
+    }
 }
 
 

@@ -10,6 +10,7 @@ import com.example.jobSeaching.repository.MembershipRepository;
 import com.example.jobSeaching.repository.UserRepository;
 import com.example.jobSeaching.service.NotificationSender;
 import com.example.jobSeaching.service.UpgradeService;
+import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -18,20 +19,16 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+@AllArgsConstructor
 @Service
 public class UpgradeServiceImpl implements UpgradeService {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
-    @Autowired
-    private MembershipRepository membershipRepository;
+    private final AdminNotificationRepository notificationRepository;
 
-    @Autowired
-    private AdminNotificationRepository notificationRepository;
+    private final NotificationSender notificationSender;
 
-    @Autowired
-    private NotificationSender notificationSender;
 
     @Override
     public void upgradeMembership(UpgradeRequest request) {

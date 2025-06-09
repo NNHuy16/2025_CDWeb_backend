@@ -37,6 +37,7 @@ public class ActivationKey {
     private LocalDateTime expiredAt;
 
     @OneToOne
+    @JoinColumn(name = "user_id")
     private User user;
 
 }

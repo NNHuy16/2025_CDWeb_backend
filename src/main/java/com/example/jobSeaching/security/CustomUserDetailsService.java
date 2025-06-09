@@ -3,8 +3,11 @@ package com.example.jobSeaching.security;
 import com.example.jobSeaching.entity.User;
 import com.example.jobSeaching.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.*;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
@@ -20,6 +23,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         // Lấy role của user (ví dụ USER, EMPLOYER, ADMIN)
         String role = "ROLE_" + user.getRole().name();
 
-        return new CustomUserDetails(user.getEmail(), user.getPassword(), role);
+        return new CustomUserDetails(user);
     }
+
 }

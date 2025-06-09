@@ -24,45 +24,43 @@ public class JobController {
 
 
     @PreAuthorize("hasRole('EMPLOYER')")
-    @PostMapping
+    @PostMapping("/post-jobs")
     public ResponseEntity<Job> postJob(@RequestBody JobRequest jobRequest, Authentication authentication) {
         Job job = jobService.createJob(jobRequest, authentication);
         return ResponseEntity.ok(job);
     }
 
-    @PatchMapping("/{id}/status")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Job> updateJobStatus(
-            @PathVariable Long id,
-            @RequestParam JobStatus status,
-            Authentication authentication) {
 
-        String adminEmail = authentication.getName();
-        return ResponseEntity.ok(jobService.updateJobStatus(id, status, adminEmail));
+    @GetMapping("/{id}")
+    public ResponseEntity<Job> getJobById(@PathVariable Long id) {
+        return jobService.getJobById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping
+    public ResponseEntity<List<Job>> getAllJobs() {
+        return ResponseEntity.ok(jobService.getAllJobs());
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Job> updateJob(@PathVariable Long id, @RequestBody Job job) {
+        return jobService.getJobById(id)
+                .map(existing -> {
+                    job.setId(id);
+                    return ResponseEntity.ok(jobService.updateJob(job));
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 
 
-//    @GetMapping("/{id}")
-//    public ResponseEntity<Job> getJobById(@PathVariable Long id) {
-//        return jobService.getJobById(id)
-//                .map(ResponseEntity::ok)
-//                .orElse(ResponseEntity.notFound().build());
-//    }
-//
-//    @GetMapping
-//    public ResponseEntity<List<Job>> getAllJobs() {
-//        return ResponseEntity.ok(jobService.getAllJobs());
-//    }
-//
-//    @PutMapping("/{id}")
-//    public ResponseEntity<Job> updateJob(@PathVariable Long id, @RequestBody Job job) {
-//        job.setId(id);
-//        return ResponseEntity.ok(jobService.updateJob(job));
-//    }
-//
-//    @DeleteMapping("/{id}")
-//    public ResponseEntity<Void> deleteJob(@PathVariable Long id) {
-//        jobService.deleteJob(id);
-//        return ResponseEntity.noContent().build();
-//    }
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteJob(@PathVariable Long id) {
+        if (jobService.getJobById(id).isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        jobService.deleteJob(id);
+        return ResponseEntity.noContent().build();
+    }
+
 }

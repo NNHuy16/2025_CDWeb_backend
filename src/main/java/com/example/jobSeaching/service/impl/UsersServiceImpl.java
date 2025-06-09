@@ -2,14 +2,15 @@ package com.example.jobSeaching.service.impl;
 
 import com.example.jobSeaching.dto.LoginRequest;
 import com.example.jobSeaching.dto.LoginResponse;
+import com.example.jobSeaching.dto.ChangeEmailRequest;
 import com.example.jobSeaching.dto.RegisterRequest;
 import com.example.jobSeaching.entity.*;
 import com.example.jobSeaching.entity.enums.*;
 import com.example.jobSeaching.repository.*;
 import com.example.jobSeaching.security.JwtTokenProvider;
-import com.example.jobSeaching.service.MailService;
 import com.example.jobSeaching.service.UsersService;
 import lombok.AllArgsConstructor;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -20,7 +21,6 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -28,13 +28,18 @@ import java.util.*;
 @Service
 @Transactional
 public class UsersServiceImpl implements UsersService {
+
+    private final JavaMailSender mailSender;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authManager;
     private final JwtTokenProvider tokenProvider;
-    private final EmailChangeRequestRepository emailChangeRequestRepository;
-    private final MailService mailService;
     private final ActivationKeyRepository activationKeyRepository;
+    private final VerificationTokenRepository verificationTokenRepository;
+    private final EmailServiceImpl emailService;
+    private final EmailChangeTokenRepository emailChangeTokenRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
+
 
     public LoginResponse login(LoginRequest request) {
         Authentication auth = authManager.authenticate(
@@ -46,11 +51,23 @@ public class UsersServiceImpl implements UsersService {
 
 
     public User registerUserLocal(RegisterRequest registerRequest) {
-        if (existsByEmail(registerRequest.getEmail())) {
-            throw new IllegalArgumentException("Email đã được sử dụng");
-        }
-        if (existsByPhoneNumber(registerRequest.getPhoneNumber())) {
-            throw new IllegalArgumentException("Số điện thoại đã được sử dụng");
+        Optional<User> existingUserOpt = userRepository.findByEmail(registerRequest.getEmail());
+
+        if (existingUserOpt.isPresent()) {
+            User existingUser = existingUserOpt.get();
+            if (!existingUser.isEnabled()) {
+                // Kiểm tra token
+                VerificationToken oldToken = verificationTokenRepository.findByUser(existingUser);
+                if (oldToken != null && oldToken.isExpired()) {
+                    // Xoá token và user cũ
+                    verificationTokenRepository.delete(oldToken);
+                    userRepository.delete(existingUser);
+                } else {
+                    throw new IllegalArgumentException("Email đã được đăng ký nhưng chưa xác minh. Vui lòng kiểm tra email hoặc yêu cầu gửi lại email xác minh.");
+                }
+            } else {
+                throw new IllegalArgumentException("Email đã được sử dụng.");
+            }
         }
         User user = new User();
         user.setFullName(registerRequest.getLastName() + " " + registerRequest.getFirstName());
@@ -61,15 +78,11 @@ public class UsersServiceImpl implements UsersService {
         user.setLogoUrl(registerRequest.getLogoUrl());
         user.setProvider(AuthProvider.LOCAL);
         user.setRole(Role.USER);
+        user.setEnabled(false);
 
-// Gọi lần 1 để có ID
-        userRepository.save(user);
-
-// Set keyId
-        user.setKeyId("NHK" + user.getId());
-
-// Gọi lần 2 để cập nhật keyId và lấy kết quả sau khi lưu
         User savedUser = userRepository.save(user);
+        savedUser.setKeyId("NHK" + savedUser.getId());
+        userRepository.save(savedUser);
 
 // Tạo ActivationKey liên quan
         ActivationKey activationKey = new ActivationKey();
@@ -78,19 +91,12 @@ public class UsersServiceImpl implements UsersService {
         activationKey.setActivationKey(savedUser.getKeyId());
         activationKey.setMembershipType(MembershipType.BASIC);
         activationKey.setActivated(false);
-
 // Lưu activationKey
         activationKeyRepository.save(activationKey);
 
-        Membership membership = new Membership();
-        membership.setMembershipType(MembershipType.BASIC);
-        membership.setName(user.getFullName());
-        membership.setPostLimit(MembershipType.BASIC.getPostLimit());
-        user.setMembership(membership);
-
         return savedUser;
-
     }
+
 
 
 
@@ -145,7 +151,9 @@ public class UsersServiceImpl implements UsersService {
 //    }
 
 
-
+    public Optional<User> findByEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
 
     public Optional<User> getUserById(Long id) {
         return userRepository.findById(id);
@@ -188,7 +196,7 @@ public class UsersServiceImpl implements UsersService {
     }
 
 
-    public void changePassword(String email, String oldPassword, String newPassword) {
+    public void changePassword(String email, String oldPassword, String newPassword, String confirmNewPassword) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
@@ -200,46 +208,103 @@ public class UsersServiceImpl implements UsersService {
         userRepository.save(user);
     }
 
-    public void requestChangeEmail(String currentEmail, String newEmail) {
-        if (existsByEmail(newEmail)) {
-            throw new IllegalArgumentException("Email mới đã được sử dụng");
+    @Transactional
+    public void requestEmailChange(User currentUser, ChangeEmailRequest request) {
+        if (!passwordEncoder.matches(request.getPassword(), currentUser.getPassword())) {
+            throw new IllegalArgumentException("Mật khẩu không đúng");
         }
 
-        String otp = String.valueOf(new Random().nextInt(899999) + 100000);
-        LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(5);
+        if (userRepository.existsByEmail(request.getNewEmail())) {
+            throw new IllegalArgumentException("Email đã tồn tại");
+        }
 
-        emailChangeRequestRepository.deleteByCurrentEmail(currentEmail);
+        if (emailChangeTokenRepository.existsByUserAndExpiryDateAfter(currentUser, LocalDateTime.now())) {
+            throw new IllegalArgumentException("Bạn đã gửi yêu cầu đổi email gần đây, vui lòng kiểm tra email để xác nhận.");
+        }
+        LocalDateTime twentyFourHoursAgo = LocalDateTime.now().minusHours(24);
+        boolean hasRecentRequest = emailChangeTokenRepository.existsByUserAndCreatedDateAfter(currentUser, twentyFourHoursAgo);
 
-        EmailChangeRequest request = new EmailChangeRequest();
-        request.setCurrentEmail(currentEmail);
-        request.setNewEmail(newEmail);
-        request.setOtp(otp);
-        request.setExpiresAt(expiresAt);
+        if (hasRecentRequest) {
+            throw new IllegalArgumentException("Bạn chỉ được đổi email 1 lần trong 24 giờ.");
+        }
 
-        emailChangeRequestRepository.save(request);
-        mailService.sendOtpEmail(newEmail, otp);
+
+        // Xóa các token cũ nếu cần
+        emailChangeTokenRepository.deleteAllByUser(currentUser);
+
+        String token = UUID.randomUUID().toString();
+        EmailChangeToken emailChangeToken = new EmailChangeToken(
+                token,
+                request.getNewEmail(),
+                LocalDateTime.now().plusMinutes(15),
+                currentUser
+        );
+
+        emailChangeTokenRepository.save(emailChangeToken);
+
+        // Gửi email xác nhận
+        String link = "http://localhost:5173/confirm-email-change?token=" + token;
+        emailService.sendEmail(
+                request.getNewEmail(),
+                "Xác nhận thay đổi email",
+                "Vui lòng nhấn vào liên kết để xác nhận thay đổi email: " + link
+        );
     }
 
 
-    public void confirmChangeEmail(String currentEmail, String otp) {
-        EmailChangeRequest request = emailChangeRequestRepository.findByCurrentEmail(currentEmail)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy yêu cầu đổi email"));
+    @Transactional
+    public void confirmEmailChange(String token) {
+        EmailChangeToken emailChangeToken = emailChangeTokenRepository.findByToken(token)
+                .orElseThrow(() -> new IllegalArgumentException("Token không hợp lệ"));
 
-        if (!request.getOtp().equals(otp)) {
-            throw new IllegalArgumentException("OTP không hợp lệ");
+        if (emailChangeToken.getExpiryDate().isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("Token đã hết hạn");
         }
 
-        if (request.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new IllegalArgumentException("OTP đã hết hạn");
+        User user = emailChangeToken.getUser();
+        user.setEmail(emailChangeToken.getNewEmail());
+
+        userRepository.save(user);
+        emailChangeTokenRepository.delete(emailChangeToken);
+    }
+
+    @Transactional
+    public void createPasswordResetToken(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Email không tồn tại"));
+
+        // Xóa token cũ nếu có
+        passwordResetTokenRepository.deleteByUser(user);
+
+        String token = UUID.randomUUID().toString();
+        PasswordResetToken resetToken = new PasswordResetToken(
+                token,
+                LocalDateTime.now().plusMinutes(15),
+                user
+        );
+
+        passwordResetTokenRepository.save(resetToken);
+
+        String link = "http://localhost:5173/reset-password?token=" + token;
+        emailService.sendEmail(email, "Đặt lại mật khẩu", "Nhấn vào link sau để đặt lại mật khẩu: " + link);
+    }
+
+    @Transactional
+    public void resetPassword(String token, String newPassword) {
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token)
+                .orElseThrow(() -> new IllegalArgumentException("Token không hợp lệ"));
+
+        if (resetToken.getExpiryDate().isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("Token đã hết hạn");
         }
 
-        User user = userRepository.findByEmail(currentEmail)
-                .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy người dùng"));
-
-        user.setEmail(request.getNewEmail());
+        User user = resetToken.getUser();
+        user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
 
-        emailChangeRequestRepository.deleteByCurrentEmail(currentEmail);
+        passwordResetTokenRepository.delete(resetToken);
     }
+
+
 
 }

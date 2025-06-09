@@ -6,12 +6,12 @@ import com.example.jobSeaching.entity.enums.JobStatus;
 import org.springframework.security.core.Authentication;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface JobService {
     Job createJob(JobRequest jobRequest, Authentication authentication);
     void deleteJob(Long id);
     List<Job> getAllJobs();
     Job updateJob(Job job);
-    Job getJobById(Long id);
-    Job updateJobStatus(Long jobId, JobStatus newStatus, String adminEmail);
+    Optional<Job> getJobById(Long id);
 }

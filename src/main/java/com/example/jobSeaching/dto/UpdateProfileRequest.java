@@ -12,6 +12,7 @@ import java.time.LocalDate;
 public class UpdateProfileRequest {
 
     @NotBlank(message = "Tên không được để trống")
+    @Pattern(regexp = "^[\\p{L}\\s]+$", message = "Tên chỉ được chứa chữ cái và khoảng trắng")
     private String fullName;
 
     @NotBlank(message = "Số điện thoại không được để trống")
