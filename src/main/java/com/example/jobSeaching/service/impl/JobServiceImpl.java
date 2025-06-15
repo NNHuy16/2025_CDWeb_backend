@@ -1,6 +1,6 @@
 package com.example.jobSeaching.service.impl;
 
-import com.example.jobSeaching.dto.JobRequest;
+import com.example.jobSeaching.dto.request.JobRequest;
 import com.example.jobSeaching.entity.Job;
 import com.example.jobSeaching.entity.User;
 import com.example.jobSeaching.entity.enums.Role;

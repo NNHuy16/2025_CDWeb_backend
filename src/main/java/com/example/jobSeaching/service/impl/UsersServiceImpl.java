@@ -1,11 +1,12 @@
 package com.example.jobSeaching.service.impl;
 
-import com.example.jobSeaching.dto.LoginRequest;
-import com.example.jobSeaching.dto.LoginResponse;
-import com.example.jobSeaching.dto.ChangeEmailRequest;
-import com.example.jobSeaching.dto.RegisterRequest;
+import com.example.jobSeaching.dto.request.LoginRequest;
+import com.example.jobSeaching.dto.response.LoginResponse;
+import com.example.jobSeaching.dto.request.ChangeEmailRequest;
+import com.example.jobSeaching.dto.request.RegisterRequest;
 import com.example.jobSeaching.entity.*;
 import com.example.jobSeaching.entity.enums.*;
+import com.example.jobSeaching.mapper.UserMapper;
 import com.example.jobSeaching.repository.*;
 import com.example.jobSeaching.security.JwtTokenProvider;
 import com.example.jobSeaching.service.UsersService;
@@ -29,12 +30,11 @@ import java.util.*;
 @Transactional
 public class UsersServiceImpl implements UsersService {
 
-    private final JavaMailSender mailSender;
+    private final UserMapper userMapper;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authManager;
     private final JwtTokenProvider tokenProvider;
-    private final ActivationKeyRepository activationKeyRepository;
     private final VerificationTokenRepository verificationTokenRepository;
     private final EmailServiceImpl emailService;
     private final EmailChangeTokenRepository emailChangeTokenRepository;
@@ -49,7 +49,7 @@ public class UsersServiceImpl implements UsersService {
         return new LoginResponse(token, auth.getAuthorities().toString());
     }
 
-
+    @Transactional
     public User registerUserLocal(RegisterRequest registerRequest) {
         Optional<User> existingUserOpt = userRepository.findByEmail(registerRequest.getEmail());
 
@@ -68,38 +68,20 @@ public class UsersServiceImpl implements UsersService {
             } else {
                 throw new IllegalArgumentException("Email đã được sử dụng.");
             }
+
         }
-        User user = new User();
-        user.setFullName(registerRequest.getLastName() + " " + registerRequest.getFirstName());
-        user.setEmail(registerRequest.getEmail());
-        user.setPhoneNumber(registerRequest.getPhoneNumber());
+        if (userRepository.existsByPhoneNumber(registerRequest.getPhoneNumber())) {
+            throw new IllegalArgumentException("Số điện thoại đã được sử dụng.");
+        }
+
+        User user = userMapper.toEntity(registerRequest);
         user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
-        user.setDateOfBirth(registerRequest.getDateOfBirth());
-        user.setLogoUrl(registerRequest.getLogoUrl());
-        user.setProvider(AuthProvider.LOCAL);
-        user.setRole(Role.USER);
-        user.setEnabled(false);
-
-        User savedUser = userRepository.save(user);
-        savedUser.setKeyId("NHK" + savedUser.getId());
-        userRepository.save(savedUser);
-
-// Tạo ActivationKey liên quan
-        ActivationKey activationKey = new ActivationKey();
-        activationKey.setUser(savedUser);
-        activationKey.setFullName(savedUser.getFullName());
-        activationKey.setActivationKey(savedUser.getKeyId());
-        activationKey.setMembershipType(MembershipType.BASIC);
-        activationKey.setActivated(false);
-// Lưu activationKey
-        activationKeyRepository.save(activationKey);
-
-        return savedUser;
+        return userRepository.save(user);
     }
 
 
 
-
+    @Transactional
     public User loginReisterUserGoogle(OAuth2AuthenticationToken auth) {
         OAuth2User oAuth2User = auth.getPrincipal();
         String email = oAuth2User.getAttribute("email");

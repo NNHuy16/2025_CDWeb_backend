@@ -1,9 +1,9 @@
 package com.example.jobSeaching.service;
 
-import com.example.jobSeaching.dto.LoginRequest;
-import com.example.jobSeaching.dto.LoginResponse;
-import com.example.jobSeaching.dto.ChangeEmailRequest;
-import com.example.jobSeaching.dto.RegisterRequest;
+import com.example.jobSeaching.dto.request.LoginRequest;
+import com.example.jobSeaching.dto.response.LoginResponse;
+import com.example.jobSeaching.dto.request.ChangeEmailRequest;
+import com.example.jobSeaching.dto.request.RegisterRequest;
 import com.example.jobSeaching.entity.enums.Role;
 import com.example.jobSeaching.entity.User;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;

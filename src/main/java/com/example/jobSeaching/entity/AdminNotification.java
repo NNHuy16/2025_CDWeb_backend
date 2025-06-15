@@ -20,5 +20,6 @@ public class AdminNotification {
 
     private LocalDateTime createdAt;
 
-    private boolean readed = false;
+    @Column(name = "is_read")
+    private boolean isRead= false;
 }

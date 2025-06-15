@@ -1,8 +1,7 @@
 package com.example.jobSeaching.service;
 
-import com.example.jobSeaching.dto.JobRequest;
+import com.example.jobSeaching.dto.request.JobRequest;
 import com.example.jobSeaching.entity.Job;
-import com.example.jobSeaching.entity.enums.JobStatus;
 import org.springframework.security.core.Authentication;
 
 import java.util.List;

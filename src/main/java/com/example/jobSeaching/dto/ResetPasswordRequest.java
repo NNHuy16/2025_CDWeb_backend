@@ -1,9 +1,0 @@
-package com.example.jobSeaching.dto;
-
-import lombok.Data;
-
-@Data
-public class ResetPasswordRequest {
-    private String token;
-    private String newPassword;
-}

@@ -1,4 +1,4 @@
-package com.example.jobSeaching.dto;
+package com.example.jobSeaching.dto.response;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 

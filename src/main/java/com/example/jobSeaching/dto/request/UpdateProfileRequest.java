@@ -1,4 +1,4 @@
-package com.example.jobSeaching.dto;
+package com.example.jobSeaching.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

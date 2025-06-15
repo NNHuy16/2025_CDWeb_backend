@@ -28,7 +28,7 @@ public class NotificationController {
     public ResponseEntity<?> markAsRead(@PathVariable Long id) {
         AdminNotification noti = notificationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Thông báo không tồn tại"));
-        noti.setReaded(true);
+        noti.setRead(true);
         notificationRepository.save(noti);
         return ResponseEntity.ok("Đã đánh dấu là đã đọc");
     }

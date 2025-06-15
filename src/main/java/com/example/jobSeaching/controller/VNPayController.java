@@ -2,10 +2,11 @@ package com.example.jobSeaching.controller;
 
 import com.example.jobSeaching.config.VNPayConfig;
 import com.example.jobSeaching.entity.MembershipOrder;
+import com.example.jobSeaching.entity.MembershipPlan;
 import com.example.jobSeaching.entity.enums.MembershipType;
 import com.example.jobSeaching.entity.enums.PaymentStatus;
 import com.example.jobSeaching.repository.MembershipOrderRepository;
-import com.example.jobSeaching.repository.MembershipRepository;
+import com.example.jobSeaching.repository.MembershipPlanRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -16,16 +17,30 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.*;
 
+
 @RestController
 @RequestMapping("/api/vnpay")
 public class VNPayController {
 
     private final MembershipOrderRepository membershipOrderRepository;
+    private final MembershipPlanRepository membershipPlanRepository;
 
-    public VNPayController(MembershipOrderRepository membershipOrderRepository) {
+    public VNPayController(MembershipOrderRepository membershipOrderRepository, MembershipPlanRepository membershipPlanRepository) {
         this.membershipOrderRepository = membershipOrderRepository;
+        this.membershipPlanRepository = membershipPlanRepository;
     }
 
+
+    /**
+     * Tạo URL thanh toán qua VNPAY cho một gói membership.
+     * Yêu cầu người dùng đã đăng nhập với vai trò USER.
+     *
+     * @param membershipTypeStr Tên gói membership (ví dụ: BASIC, PREMIUM).
+     * @param bankCode (tùy chọn) Mã ngân hàng người dùng muốn thanh toán.
+     * @param language (mặc định: "vn") Ngôn ngữ giao diện thanh toán.
+     * @param request Đối tượng HttpServletRequest dùng để lấy IP.
+     * @return URL chuyển hướng người dùng đến trang thanh toán VNPAY.
+     */
     @PreAuthorize("hasRole('USER')")
     @PostMapping("/create_payment_url")
     public Map<String, Object> createPaymentUrl(
@@ -42,7 +57,11 @@ public class VNPayController {
             throw new IllegalArgumentException("MembershipType không hợp lệ");
         }
 
-        int amount = membershipType.getPrice();
+        // Lấy MembershipPlan từ DB
+        MembershipPlan plan = membershipPlanRepository.findById(membershipType)
+                .orElseThrow(() -> new RuntimeException("Gói membership không tồn tại"));
+
+        int amount = plan.getPrice();
 
         String vnp_Version = "2.1.0";
         String vnp_Command = "pay";
@@ -57,7 +76,7 @@ public class VNPayController {
         order.setTxnRef(vnp_TxnRef);
         order.setAmount(amount);
         order.setStatus(PaymentStatus.PENDING);
-        order.setMembershipType(membershipType);
+        order.setMembershipPlan(plan);
         // TODO: set user hiện tại
         order.setCreatedAt(LocalDateTime.now());
         membershipOrderRepository.save(order);
@@ -116,6 +135,14 @@ public class VNPayController {
         return res;
     }
 
+
+    /**
+     * API xử lý khi VNPAY redirect về hệ thống với kết quả thanh toán.
+     * Hệ thống xác minh chuỗi hash, cập nhật trạng thái đơn hàng.
+     *
+     * @param request Chứa tất cả tham số từ VNPAY.
+     * @return Thông báo kết quả giao dịch.
+     */
     @PreAuthorize("hasRole('USER')")
     @GetMapping("/vnpay-return")
     public ResponseEntity<String> vnpayReturn(HttpServletRequest request) {

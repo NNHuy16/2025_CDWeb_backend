@@ -1,6 +1,6 @@
-package com.example.jobSeaching.dto;
+package com.example.jobSeaching.dto.request;
 
-import com.example.jobSeaching.service.validator.annotation.DifferentFromOldPassword;
+import com.example.jobSeaching.dto.PasswordConfirmable;
 import com.example.jobSeaching.service.validator.annotation.PasswordMatches;
 import jakarta.validation.constraints.*;
 import lombok.Data;

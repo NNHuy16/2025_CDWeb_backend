@@ -1,9 +1,7 @@
-package com.example.jobSeaching.dto;
+package com.example.jobSeaching.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Data
 public class LoginRequest {

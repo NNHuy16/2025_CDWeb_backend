@@ -1,8 +1,7 @@
 package com.example.jobSeaching.controller;
 
-import com.example.jobSeaching.dto.JobRequest;
+import com.example.jobSeaching.dto.request.JobRequest;
 import com.example.jobSeaching.entity.Job;
-import com.example.jobSeaching.entity.enums.JobStatus;
 import com.example.jobSeaching.service.JobService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;

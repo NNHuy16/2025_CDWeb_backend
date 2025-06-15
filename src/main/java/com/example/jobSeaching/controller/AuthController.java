@@ -1,10 +1,11 @@
 package com.example.jobSeaching.controller;
 
-import com.example.jobSeaching.dto.*;
-import com.example.jobSeaching.entity.PasswordResetToken;
+import com.example.jobSeaching.dto.request.LoginRequest;
+import com.example.jobSeaching.dto.request.RegisterRequest;
+import com.example.jobSeaching.dto.request.ResetPasswordRequest;
+import com.example.jobSeaching.dto.response.LoginResponse;
 import com.example.jobSeaching.entity.User;
 import com.example.jobSeaching.entity.VerificationToken;
-import com.example.jobSeaching.repository.PasswordResetTokenRepository;
 import com.example.jobSeaching.repository.UserRepository;
 import com.example.jobSeaching.repository.VerificationTokenRepository;
 import com.example.jobSeaching.service.UsersService;
@@ -51,6 +52,11 @@ public class AuthController {
     private UserRepository userRepository;
 
 
+    /**
+     * Đăng nhập người dùng với email và mật khẩu.
+     * @param request Thông tin đăng nhập (email, password).
+     * @return Trả về JWT token nếu thành công, hoặc thông báo lỗi nếu thất bại.
+     */
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         try {
@@ -64,6 +70,13 @@ public class AuthController {
     }
 
 
+    /**
+     * Đăng ký tài khoản mới.
+     * @param registerRequest Thông tin đăng ký.
+     * @param bindingResult Kết quả validate đầu vào.
+     * @param request Đối tượng request của servlet để tạo đường dẫn xác minh.
+     * @return Trả về thông báo kết quả đăng ký.
+     */
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest registerRequest, BindingResult bindingResult,
                                       HttpServletRequest request) {
@@ -92,12 +105,20 @@ public class AuthController {
         }
     }
 
-
+    /**
+     * Điều hướng sang trang đăng nhập bằng Google OAuth2.
+     */
     @GetMapping("/login/google")
     public void loginWithGoogle(HttpServletResponse response) throws IOException {
         response.sendRedirect("/oauth2/authorization/google");
     }
 
+
+    /**
+     * Xác minh tài khoản qua email bằng cách truyền token.
+     * @param token Mã xác minh được gửi qua email.
+     * @return Trả về thông báo kết quả xác minh.
+     */
     @GetMapping("/verify")
     public ResponseEntity<String> verifyEmail(@RequestParam("token") String token) {
         VerificationToken vt = verificationTokenService.findByToken(token);
@@ -113,6 +134,13 @@ public class AuthController {
         return ResponseEntity.ok("Tài khoản đã được xác minh thành công.");
     }
 
+
+    /**
+     * Gửi lại email xác minh tài khoản nếu người dùng chưa xác thực.
+     * @param email Email người dùng.
+     * @param request Đối tượng request để dựng lại đường dẫn xác minh.
+     * @return Trả về thông báo kết quả gửi lại email.
+     */
     @PostMapping("/resend-verification")
     public ResponseEntity<?> resendVerification(@RequestParam String email, HttpServletRequest request) {
         Optional<User> userOpt = userRepository.findByEmail(email);
@@ -144,6 +172,12 @@ public class AuthController {
         return ResponseEntity.ok("Email xác minh đã được gửi lại.");
     }
 
+
+    /**
+     * Gửi email khôi phục mật khẩu nếu quên.
+     * @param email Email người dùng muốn khôi phục mật khẩu.
+     * @return Thông báo kết quả gửi email.
+     */
     @PostMapping("/forgot-password")
     public ResponseEntity<String> forgotPassword(@RequestParam String email) {
         try {
@@ -154,6 +188,12 @@ public class AuthController {
         }
     }
 
+
+    /**
+     * Đặt lại mật khẩu mới bằng token hợp lệ.
+     * @param request Chứa token và mật khẩu mới.
+     * @return Trả về thông báo kết quả đặt lại mật khẩu.
+     */
     @PostMapping("/reset-password")
     public ResponseEntity<String> resetPassword(@RequestBody ResetPasswordRequest request) {
         try {

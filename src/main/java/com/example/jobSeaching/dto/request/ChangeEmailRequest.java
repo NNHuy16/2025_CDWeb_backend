@@ -1,4 +1,4 @@
-package com.example.jobSeaching.dto;
+package com.example.jobSeaching.dto.request;
 
 import com.example.jobSeaching.service.validator.annotation.DifferentFromOldPassword;
 import jakarta.validation.constraints.Email;

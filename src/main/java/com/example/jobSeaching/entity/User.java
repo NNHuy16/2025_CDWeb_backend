@@ -1,20 +1,19 @@
 package com.example.jobSeaching.entity;
 
 import com.example.jobSeaching.entity.enums.AuthProvider;
-import com.example.jobSeaching.entity.enums.MembershipType;
 import com.example.jobSeaching.entity.enums.Role;
-import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
 import java.util.List;
 
-@AllArgsConstructor
-@NoArgsConstructor
-@Data
 @Entity
 @Table(name = "users")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,24 +22,20 @@ public class User {
     @Column(unique = true)
     private String keyId;
 
+    @Column(nullable = false)
     private String fullName;
 
     @Column(unique = true, nullable = false)
     private String email;
 
-    private String password; // nullable nếu đăng nhập qua OAuth
+    private String password; // nullable nếu dùng OAuth
 
     @Column(unique = true)
     private String phoneNumber;
 
-    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate dateOfBirth;
 
     private String logoUrl;
-
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "membership_id")
-    private Membership membership;
 
     @Enumerated(EnumType.STRING)
     private Role role;
@@ -48,24 +43,15 @@ public class User {
     @Enumerated(EnumType.STRING)
     private AuthProvider provider;
 
-    @Column(nullable = false)
     private boolean enabled = false;
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private ActivationKey activationKey;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<MembershipOrder> orders;
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private VerificationToken verificationToken;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<VerificationToken> tokens;
 
-    @OneToMany(mappedBy = "user")
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Application> applications;
 
-    @PostPersist
-    public void setKeyIdAfterInsert() {
-        if (this.keyId == null) {
-            this.keyId = "NHK" + this.id;
-        }
-    }
 }
-
-

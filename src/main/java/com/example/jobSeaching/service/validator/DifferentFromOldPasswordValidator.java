@@ -1,6 +1,6 @@
 package com.example.jobSeaching.service.validator;
 
-import com.example.jobSeaching.dto.ChangePasswordRequest;
+import com.example.jobSeaching.dto.request.ChangePasswordRequest;
 import com.example.jobSeaching.service.validator.annotation.DifferentFromOldPassword;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;

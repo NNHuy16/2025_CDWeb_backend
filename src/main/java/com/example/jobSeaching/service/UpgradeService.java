@@ -1,6 +1,6 @@
 package com.example.jobSeaching.service;
 
-import com.example.jobSeaching.dto.UpgradeRequest;
+import com.example.jobSeaching.dto.request.UpgradeRequest;
 import com.example.jobSeaching.entity.User;
 import com.example.jobSeaching.entity.enums.MembershipType;
 

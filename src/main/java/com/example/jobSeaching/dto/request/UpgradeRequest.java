@@ -1,10 +1,8 @@
-package com.example.jobSeaching.dto;
+package com.example.jobSeaching.dto.request;
 
 
 import com.example.jobSeaching.entity.enums.MembershipType;
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Data
 public class UpgradeRequest {
