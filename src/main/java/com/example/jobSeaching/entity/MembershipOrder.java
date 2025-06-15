@@ -5,27 +5,31 @@ import com.example.jobSeaching.entity.enums.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.Data;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-@Data
 @Entity
+@Data
 public class MembershipOrder {
     @Id
-    private String txnRef; // Mã giao dịch (vnp_TxnRef)
+    private String txnRef;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
-    @Enumerated(EnumType.STRING)
-    private MembershipType membershipType;
+    @ManyToOne
+    @JoinColumn(name = "membership_type", referencedColumnName = "type")
+    private MembershipPlan membershipPlan;
 
     private int amount;
 
     @Enumerated(EnumType.STRING)
-    private PaymentStatus status;
+    private PaymentStatus status; // PENDING, PAID, FAILED
+
+    private String paymentMethod; // VNPAY, LOCAL
+
+    private boolean adminApproved; // Chỉ dùng cho payment thủ công
+    private LocalDateTime approvedAt;
 
     private LocalDateTime createdAt;
-
 }

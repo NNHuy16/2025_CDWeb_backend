@@ -1,5 +1,6 @@
 package com.example.jobSeaching.config;
 
+import com.example.jobSeaching.entity.enums.Role;
 import com.example.jobSeaching.security.CustomUserDetailsService;
 import com.example.jobSeaching.security.filter.JwtAuthenticationFilter;
 import com.example.jobSeaching.security.OAuth2SuccessHandler;
@@ -60,19 +61,21 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/auth/login",
-                                "/api/auth/register",
-                                "/oauth2/**",
-                                "/api/auth/request-change-email",
-                                "/api/auth/confirm-change-email").permitAll()
-                        .requestMatchers(HttpMethod.PATCH, "/api/auth/change-password").permitAll()
-                        .requestMatchers("/api/users/profile/**").permitAll()
-                        .requestMatchers("/api/admin/**").permitAll()//ĐANG TEST NÊN BẬT
-                        .requestMatchers(HttpMethod.PATCH, "/api/jobs/*/status").hasRole("ADMIN")
-                        .requestMatchers("/api/jobs/**").hasRole("EMPLOYER")
-                        .requestMatchers("/api/users/user/**").hasRole("USER")
+                        .requestMatchers("/api/auth/**", "/oauth2/**").permitAll()
                         .requestMatchers("/api/vnpay/**").permitAll()
+
+                        // Public profile (có thể giữ lại nếu cần)
+                        .requestMatchers("/api/users/profile/**").permitAll()
+
+                        // Bảo vệ các route quan trọng
+                        .requestMatchers("/api/users/me").authenticated()
+                        .requestMatchers("/api/payment/**").hasRole("USER")
+                        .requestMatchers("/api/membership/**").hasAnyRole("USER", "EMPLOYER")
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/jobs/**").hasRole("EMPLOYER")
                         .requestMatchers("/api/applications/**").hasAnyRole("USER", "EMPLOYER")
+
+                        // Mặc định các request khác đều cần xác thực
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
@@ -97,6 +100,7 @@ public class SecurityConfig {
         config.setAllowedHeaders(List.of("*"));
         // Nếu bạn muốn client thấy Authorization trong response
         config.setExposedHeaders(List.of("Authorization"));
+        config.setAllowCredentials(true);
         config.setMaxAge(3600L);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);

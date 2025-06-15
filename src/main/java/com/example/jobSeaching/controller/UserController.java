@@ -1,17 +1,12 @@
 package com.example.jobSeaching.controller;
 
-import com.example.jobSeaching.dto.ChangePasswordRequest;
-import com.example.jobSeaching.dto.OTP.ConfirmChangeEmailDTO;
-import com.example.jobSeaching.dto.OTP.RequestChangeEmailDTO;
-import com.example.jobSeaching.entity.ActivationKey;
-import com.example.jobSeaching.entity.Job;
-import com.example.jobSeaching.entity.enums.Role;
+import com.example.jobSeaching.dto.request.ChangePasswordRequest;
+import com.example.jobSeaching.dto.request.ChangeEmailRequest;
 import com.example.jobSeaching.entity.User;
 import com.example.jobSeaching.helper.SecurityUtil;
-import com.example.jobSeaching.service.EmployerService;
+import com.example.jobSeaching.repository.UserRepository;
+import com.example.jobSeaching.service.BlacklistService;
 import com.example.jobSeaching.service.UsersService;
-import com.example.jobSeaching.service.AdminService;
-import com.example.jobSeaching.service.JobService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +14,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+
 import org.springframework.web.bind.annotation.*;
 
 
@@ -27,14 +23,24 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     @Autowired
-    private final UsersService userService;
+    private UsersService userService;
+
+    @Autowired
+    private BlacklistService blacklistService;
+
+    @Autowired
+    private UserRepository userRepository;
 
 
-    public UserController(UsersService userService) {
-        this.userService = userService;
 
-    }
-
+    /**
+     * API cập nhật thông tin cá nhân của người dùng hiện tại.
+     * Yêu cầu người dùng đã đăng nhập.
+     *
+     * @param updatedUser Thông tin cập nhật.
+     * @param authentication Thông tin xác thực để lấy email.
+     * @return Người dùng sau khi cập nhật.
+     */
     @PreAuthorize("isAuthenticated()")
     @PutMapping("/profile")
     public ResponseEntity<?> updateProfile(@RequestBody User updatedUser, Authentication authentication) {
@@ -43,30 +49,89 @@ public class UserController {
         return ResponseEntity.ok(updated);
     }
 
+    /**
+     * API đăng xuất người dùng bằng cách đưa JWT vào danh sách blacklist.
+     * Yêu cầu người dùng đã đăng nhập.
+     *
+     * @param authHeader Header chứa token Bearer.
+     * @return Thông báo đăng xuất thành công.
+     */
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("/api/logout")
+    public ResponseEntity<?> logout(@RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.substring(7); // bỏ "Bearer "
+        blacklistService.addToken(token);  // lưu token vào blacklist
+        return ResponseEntity.ok("Logged out");
+    }
+
+    /**
+     * API thay đổi mật khẩu. Yêu cầu người dùng cung cấp mật khẩu cũ và mật khẩu mới.
+     *
+     * @param userDetails Người dùng hiện tại (được inject từ Spring Security).
+     * @param request Request chứa mật khẩu cũ và mới.
+     * @return Thông báo thành công.
+     */
     @PreAuthorize("isAuthenticated()")
     @PostMapping("/change-password")
     public ResponseEntity<String> changePassword(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody @Valid ChangePasswordRequest request) {
 
-        userService.changePassword(userDetails.getUsername(), request.getOldPassword(), request.getNewPassword());
+        userService.changePassword(userDetails.getUsername(), request.getOldPassword(), request.getNewPassword(), request.getConfirmNewPassword());
         return ResponseEntity.ok("Đổi mật khẩu thành công");
     }
 
-    @PreAuthorize("isAuthenticated()")
-    @PostMapping("/request-change-email")
-    public ResponseEntity<String> requestChangeEmail(@AuthenticationPrincipal UserDetails userDetails,
-                                                     @RequestBody RequestChangeEmailDTO dto) {
-        userService.requestChangeEmail(userDetails.getUsername(), dto.getNewEmail());
-        return ResponseEntity.ok("Đã gửi OTP tới email mới.");
+
+    /**
+     * API yêu cầu thay đổi email. Gửi mã xác nhận tới email mới.
+     *
+     * @param userDetails Người dùng hiện tại.
+     * @param request Dữ liệu chứa email mới.
+     * @return Thông báo đã gửi email xác nhận.
+     */
+    @PostMapping("/change-email")
+    public ResponseEntity<String> requestEmailChange(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody @Valid ChangeEmailRequest request) {
+        User user = userService.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
+
+        userService.requestEmailChange(user, request);
+        return ResponseEntity.ok("Đã gửi email xác nhận tới địa chỉ mới");
     }
 
-    @PreAuthorize("isAuthenticated()")
-    @PostMapping("/confirm-change-email")
-    public ResponseEntity<String> confirmChangeEmail(@AuthenticationPrincipal UserDetails userDetails,
-                                                     @RequestBody ConfirmChangeEmailDTO dto) {
-        userService.confirmChangeEmail(userDetails.getUsername(), dto.getOtp());
-        return ResponseEntity.ok("Đổi email thành công.");
+
+    /**
+     * API xác nhận thay đổi email bằng token gửi qua email.
+     *
+     * @param token Mã xác nhận.
+     * @return Thông báo kết quả xác nhận.
+     */
+    @GetMapping("/confirm-email-change")
+    public ResponseEntity<String> confirmEmailChange(@RequestParam String token) {
+        try {
+            userService.confirmEmailChange(token);
+            return ResponseEntity.ok("Email đã được thay đổi thành công");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage()); // trả 400 với message
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Đã xảy ra lỗi trong quá trình xử lý.");
+        }
+
+    }
+
+    /**
+     * API lấy role hiện tại của người dùng đang đăng nhập.
+     *
+     * @param auth Thông tin xác thực.
+     * @return Tên role của người dùng (USER, EMPLOYER, ADMIN).
+     */
+    @GetMapping("/me")
+    public ResponseEntity<String> getCurrentUserRole(Authentication auth) {
+        String email = auth.getName();
+        return userRepository.findByEmail(email)
+                .map(user -> ResponseEntity.ok(user.getRole().name()))
+                .orElse(ResponseEntity.notFound().build());
     }
 
 
