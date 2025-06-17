@@ -1,10 +1,10 @@
 package com.example.jobSeaching.controller;
 
 import com.example.jobSeaching.dto.request.JobRequest;
-import com.example.jobSeaching.entity.Job;
+import com.example.jobSeaching.dto.response.JobDTO;
+import com.example.jobSeaching.entity.enums.JobStatus;
 import com.example.jobSeaching.service.JobService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -13,53 +13,46 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequiredArgsConstructor
-
 @RequestMapping("/api/jobs")
+@RequiredArgsConstructor
 public class JobController {
 
-    @Autowired
     private final JobService jobService;
 
-
-    @PreAuthorize("hasRole('EMPLOYER')")
-    @PostMapping("/post-jobs")
-    public ResponseEntity<Job> postJob(@RequestBody JobRequest jobRequest, Authentication authentication) {
-        Job job = jobService.createJob(jobRequest, authentication);
-        return ResponseEntity.ok(job);
+    @PostMapping("/post-job")
+    public ResponseEntity<JobDTO> postJob(@RequestBody JobRequest jobRequest, Authentication authentication) {
+        return ResponseEntity.ok(jobService.createJob(jobRequest, authentication));
     }
 
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<JobDTO> updateJobStatus(
+            @PathVariable Long id,
+            @RequestParam JobStatus status,
+            Authentication authentication) {
+        String adminEmail = authentication.getName();
+        return ResponseEntity.ok(jobService.updateJobStatus(id, status, adminEmail));
+    }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Job> getJobById(@PathVariable Long id) {
-        return jobService.getJobById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<JobDTO> getJobById(@PathVariable Long id) {
+        JobDTO job = jobService.getJobById(id);
+        return job != null ? ResponseEntity.ok(job) : ResponseEntity.notFound().build();
     }
 
     @GetMapping
-    public ResponseEntity<List<Job>> getAllJobs() {
+    public ResponseEntity<List<JobDTO>> getAllJobs() {
         return ResponseEntity.ok(jobService.getAllJobs());
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<Job> updateJob(@PathVariable Long id, @RequestBody Job job) {
-        return jobService.getJobById(id)
-                .map(existing -> {
-                    job.setId(id);
-                    return ResponseEntity.ok(jobService.updateJob(job));
-                })
-                .orElse(ResponseEntity.notFound().build());
+    @PutMapping("/update/{id}")
+    public ResponseEntity<JobDTO> updateJob(@PathVariable Long id, @RequestBody JobRequest jobRequest) {
+        return ResponseEntity.ok(jobService.updateJob(jobRequest, id));
     }
 
-
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/delete/{id}")
     public ResponseEntity<Void> deleteJob(@PathVariable Long id) {
-        if (jobService.getJobById(id).isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
         jobService.deleteJob(id);
         return ResponseEntity.noContent().build();
     }
-
 }

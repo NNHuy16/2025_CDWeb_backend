@@ -2,6 +2,7 @@ package com.example.jobSeaching.controller;
 
 import com.example.jobSeaching.dto.request.ChangePasswordRequest;
 import com.example.jobSeaching.dto.request.ChangeEmailRequest;
+import com.example.jobSeaching.dto.response.UserDTO;
 import com.example.jobSeaching.entity.User;
 import com.example.jobSeaching.helper.SecurityUtil;
 import com.example.jobSeaching.repository.UserRepository;
@@ -133,6 +134,16 @@ public class UserController {
                 .map(user -> ResponseEntity.ok(user.getRole().name()))
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/profile")
+    public ResponseEntity<?> getUserProfile(Authentication authentication) {
+        String email = authentication.getName();
+        return userRepository.findByEmail(email)
+                .map(user -> ResponseEntity.ok(new UserDTO(user)))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
 
 
 }
