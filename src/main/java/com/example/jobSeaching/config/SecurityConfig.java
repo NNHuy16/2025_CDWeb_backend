@@ -68,7 +68,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/users/profile/**").permitAll()
 
                         // Bảo vệ các route quan trọng
-                        .requestMatchers("/api/users/me").authenticated()
+                        .requestMatchers("/api/users/**").authenticated()
                         .requestMatchers("/api/payment/**").hasRole("USER")
                         .requestMatchers("/api/membership/**").hasAnyRole("USER", "EMPLOYER")
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")

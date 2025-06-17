@@ -19,16 +19,21 @@ public class Job {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String title;
-
     @Column(columnDefinition = "TEXT")
+    private String title;
     private String description;
-
     private String requirements;
-
     private String salary;
-
     private String location;
+    private String contact;
+    private String companyName;
+    private String position;
+    private String age;
+    private String education;
+    private int quantity;
+    private String workTime;
+    private String recruitment;
+    private String experience;
 
     private LocalDate postedDate;
 
@@ -36,6 +41,7 @@ public class Job {
 
     @Enumerated(EnumType.STRING)
     private JobStatus status; // PENDING, APPROVED, CLOSED
+
 
     @ManyToOne
     @JoinColumn(name = "employer_id")
